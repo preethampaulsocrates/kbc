@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fastest Finger First</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+        .logo img {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: calc(100% - 20px);
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .question-container {
+            display: none;
+            margin-top: 20px;
+        }
+        .options button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 5px;
+        }
+        .options button.selected {
+            background-color: #4caf50;
+            color: white;
+        }
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Logo -->
+        <div class="logo">
+            <img src="logo.png" alt="Logo">
+        </div>
+
+        <!-- Input for participant name -->
+        <input type="text" id="participantName" placeholder="Enter your name">
+
+        <!-- Start button -->
+        <button onclick="startGame()">Start</button>
+
+        <!-- Question and options (Initially hidden) -->
+        <div class="question-container" id="questionContainer">
+            <h2>Arrange the following in the correct order:</h2>
+            <p>1. A  2. B  3. C  4. D</p>
+
+            <!-- Timer -->
+            <div class="timer" id="timer">Time: 0s</div>
+
+            <!-- Options -->
+            <div class="options">
+                <button onclick="selectOption(this, '1')">A</button>
+                <button onclick="selectOption(this, '2')">B</button>
+                <button onclick="selectOption(this, '3')">C</button>
+                <button onclick="selectOption(this, '4')">D</button>
+            </div>
+
+            <!-- Submit button -->
+            <button onclick="submitAnswer()">Submit</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedOptions = [];
+        let startTime;
+        let timerInterval;
+
+        function startGame() {
+            const participantName = document.getElementById('participantName').value;
+            if (participantName === '') {
+                alert('Please enter your name.');
+                return;
+            }
+
+            // Show the question container and start the timer
+            document.getElementById('questionContainer').style.display = 'block';
+            startTime = performance.now();
+
+            // Start the timer
+            let elapsedSeconds = 0;
+            timerInterval = setInterval(() => {
+                elapsedSeconds = Math.floor((performance.now() - startTime) / 1000);
+                document.getElementById('timer').innerText = `Time: ${elapsedSeconds}s`;
+            }, 1000);
+        }
+
+        function selectOption(button, option) {
+            if (selectedOptions.length < 4) {
+                // Change color of the selected option
+                button.classList.add('selected');
+                selectedOptions.push(option);
+            } else {
+                alert("You can only select 4 options.");
+            }
+        }
+
+        function submitAnswer() {
+            if (selectedOptions.length !== 4) {
+                alert("Please select all 4 options.");
+                return;
+            }
+
+            // Stop the timer
+            clearInterval(timerInterval);
+
+            const order = selectedOptions.join(',');
+
+            // Send answer, start time, and participant name to server
+            const participantName = document.getElementById('participantName').value;
+
+            fetch('submit_answer.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    participant: participantName,
+                    order: order,
+                    time: startTime
+                })
+            }).then(response => response.json())
+              .then(data => {
+                  alert(data.message);
+                  selectedOptions = [];  // Clear selected options
+              });
+        }
+    </script>
+
+</body>
+</html>
